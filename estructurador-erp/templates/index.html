@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estructurador Inteligente de Especificaciones ERP (Oracle Fusion Cloud)</title>
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-hover: #1e3a8a;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --border: #cbd5e1;
+            --text: #0f172a;
+            --muted: #64748b;
+            --success-bg: #dcfce7;
+            --success-text: #166534;
+            --warn-bg: #fef3c7;
+            --warn-text: #92400e;
+            --danger-bg: #fee2e2;
+            --danger-text: #991b1b;
+            --info-bg: #e0f2fe;
+            --info-text: #075985;
+            --emerald-bg: #ecfdf5;
+            --emerald-border: #10b981;
+            --emerald-text: #065f46;
+        }
+
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            line-height: 1.5;
+        }
+
+        .header-bar {
+            max-width: 1240px;
+            margin: 0 auto 16px auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .header-bar h1 {
+            font-size: 22px;
+            margin: 0;
+            color: #0f172a;
+        }
+
+        .header-bar p {
+            margin: 4px 0 0 0;
+            font-size: 13.5px;
+            color: var(--muted);
+        }
+
+        /* BANDEJA PERSISTENTE DE LÍNEAS PARA COMBOS */
+        .queue-container {
+            max-width: 1240px;
+            margin: 0 auto 18px auto;
+            display: none;
+        }
+
+        .queue-card {
+            background: #ffffff;
+            border: 2px solid #3b82f6;
+            border-radius: 10px;
+            padding: 14px 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+        }
+
+        .layout {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.18fr 0.82fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        @media (max-width: 960px) {
+            .layout { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+            margin-bottom: 20px;
+        }
+
+        .demo-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .preset-btn {
+            background: #f8fafc;
+            border: 1px solid #94a3b8;
+            color: #334155;
+            padding: 6px 11px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .preset-btn:hover {
+            background: #e2e8f0;
+            border-color: #475569;
+            color: #0f172a;
+        }
+
+        textarea.main-input {
+            width: 100%;
+            height: 80px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 13.5px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .btn-secondary {
+            background: white;
+            color: #475569;
+            border: 1px solid var(--border);
+            padding: 9px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+
+        .banner {
+            padding: 13px 16px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+        }
+        .banner-danger { background: var(--danger-bg); color: var(--danger-text); border-left: 4px solid #dc2626; }
+        .banner-warn { background: var(--warn-bg); color: var(--warn-text); border-left: 4px solid #d97706; }
+        .banner-info { background: var(--info-bg); color: var(--info-text); border-left: 4px solid #0284c7; }
+        .banner-success { background: var(--success-bg); color: var(--success-text); border-left: 4px solid #16a34a; }
+        .banner-emerald { background: var(--emerald-bg); color: var(--emerald-text); border-left: 4px solid var(--emerald-border); }
+
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .chip {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12.5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .chip:hover {
+            background: #dbeafe;
+            border-color: #3b82f6;
+            color: #1e3a8a;
+        }
+
+        .chip.selected {
+            background: #1e40af;
+            border-color: #1e40af;
+            color: white;
+            font-weight: 600;
+        }
+
+        .delta-tag {
+            background: #fef08a;
+            color: #854d0e;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+            border: 1px solid #facc15;
+            font-size: 11.5px;
+            display: inline-block;
+            margin: 2px 3px 2px 0;
+        }
+
+        .attr-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 14px;
+            background: #f8fafc;
+        }
+
+        .attr-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 4px;
+        }
+
+        .attr-title {
+            font-weight: 700;
+            font-size: 14.5px;
+            color: #0f172a;
+        }
+
+        .attr-why {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 10px;
+        }
+
+        .helper-links {
+            display: flex;
+            gap: 14px;
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px dashed #cbd5e1;
+            font-size: 12px;
+        }
+
+        .helper-link {
+            color: #2563eb;
+            cursor: pointer;
+            font-weight: 600;
+            user-select: none;
+        }
+        .helper-link:hover { text-decoration: underline; }
+
+        .sub-box {
+            margin-top: 10px;
+            padding: 11px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            display: none;
+        }
+
+        .sub-box.func-box {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e3a8a;
+        }
+
+        .sub-box.field-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+        .resolved-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 8px;
+        }
+
+        .resolved-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .origin-CONFIRMADO { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .origin-DEDUCIDO_POR_USO { background: #e0f2fe; color: #075985; border: 1px solid #7dd3fc; }
+        .origin-POR_MEDIR_EN_CAMPO { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+
+        .oracle-output-box {
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 13.5px;
+            word-break: break-word;
+            min-height: 62px;
+            margin-top: 8px;
+            border: 2px solid #334155;
+        }
+
+        .char-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11.5px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+
+        .custom-input-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }
+        .custom-input-row input {
+            flex: 1;
+            padding: 6px 10px;
+            font-size: 12.5px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .custom-input-row button {
+            padding: 6px 12px;
+            font-size: 12px;
+            background: #334155;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header-bar">
+    <div>
+        <h1>Definidor Inteligente de Descripciones (Estándar Oracle Fusion Cloud)</h1>
+        <p>Catalogación determinista con cruce de catálogo, control UOM, estándar ISO 8000 y colapso de variantes.</p>
+    </div>
+    <div style="font-size: 12px; color: var(--muted);">
+        Base en memoria: <strong id="totalCsvBadge">{{ total_csv }}</strong> ítems del histórico
+    </div>
+</div>
+
+<!-- BANDEJA DE COLA PARA COMBOS -->
+<div id="bandejaColaCombos" class="queue-container">
+    <div class="queue-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <strong style="color: #1e40af; font-size: 14.5px;">📋 Bandeja de Líneas del Requerimiento (Gestión de Combo)</strong>
+            <button class="btn-secondary" style="padding: 4px 10px; font-size: 11.5px;" onclick="copiarTodasLineasCompletadas()">
+                📋 Copiar Todas las Líneas Finalizadas
+            </button>
+        </div>
+        <div id="queueContent"></div>
+    </div>
+</div>
+
+<div class="layout">
+    <!-- COLUMNA IZQUIERDA: ENTRADA Y DESAMBIGUACIÓN -->
+    <div>
+        <div class="card">
+            <div style="font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 8px;">
+                CASOS DE PRUEBA RÁPIDOS (1 CLIC):
+            </div>
+            <div class="demo-presets">
+                <button class="preset-btn" onclick="cargarDemo('Necesito 4 válvulas de bola de acero inoxidable de 2 pulgadas')">
+                    1. Atajo 1 Clic con Delta (4 válvulas 2 pulg)
+                </button>
+                <button class="preset-btn" onclick="cargarDemo('Válvula de bola de acero inoxidable')">
+                    2. Múltiples Variantes en CSV (5 medidas)
+                </button>
+                <button class="preset-btn" onclick="cargarDemo('Impulsor para bomba Flygt código 602145')">
+                    3. Repuesto OEM vs Norma ISO 8000 (Flygt)
+                </button>
+                <button class="preset-btn" onclick="cargarDemo('Necesito 20 galones de pintura epóxica gris para piso de almacén')">
+                    4. Trampa UOM Kit/Rollo (Pintura 20 gln)
+                </button>
+                <button class="preset-btn" onclick="cargarDemo('Compra e instalación de 2 electrobombas sumergibles para lodos con su mantenimiento')">
+                    5. Combo con Bandeja de Cola
+                </button>
+                <button class="preset-btn" style="border-color: #ef4444; background: #fef2f2; color: #991b1b; font-weight: 700;" onclick="cargarDemo('Tubería de PVC cédula 40 para línea de vapor de caldera a 220 grados')">
+                    6. 🛑 Probar Warning Anti-Frankenstein (PVC en Vapor a 220°C)
+                </button>
+            </div>
+
+            <textarea id="textoBase" class="main-input" placeholder="Escribe en tus palabras lo que necesitas solicitar (ej. 'Necesito 4 válvulas de bola inox de 2 pulgadas', 'Impulsor OEM Flygt')..."></textarea>
+
+            <div class="btn-row">
+                <button id="btnAnalizar" class="btn-primary" onclick="iniciarAnalisis()">
+                    Analizar y Estructurar Descripción
+                </button>
+                <button class="btn-secondary" onclick="reiniciarTodo()">
+                    Limpiar todo
+                </button>
+                <span id="loadingStatus" style="font-size: 13px; color: var(--primary); display: none; font-weight: 600;">
+                    ⏳ Ejecutando motor de reglas y LLM...
+                </span>
+            </div>
+        </div>
+
+        <!-- CONTENEDOR DINÁMICO DE ALERTAS, ATAJOS Y PREGUNTAS -->
+        <div id="zonaInteractiva"></div>
+    </div>
+
+    <!-- COLUMNA DERECHA: SALIDA ORACLE FUSION CLOUD, UOM Y TRAZABILIDAD -->
+    <div>
+        <div class="card" style="position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 15.5px;">Línea Estandarizada (Oracle Fusion Cloud)</h3>
+                <span id="estadoBadge" class="badge" style="background: #e2e8f0; color: #475569;">ESPERANDO ENTRADA</span>
+            </div>
+
+            <div id="oracleOutput" class="oracle-output-box">
+                LA DESCRIPCIÓN TÉCNICA NORMALIZADA APARECERÁ AQUÍ...
+            </div>
+
+            <div class="char-bar">
+                <span>Estándar: MAYÚSCULAS SIN ABREVIATURAS AMBIGUAS</span>
+                <span id="charCount">0 / 240 caracteres (Meta ideal: máx 120)</span>
+            </div>
+
+            <!-- PANEL DE WARNING / ALERTA TÉCNICA DESTACADO -->
+            <div id="panelWarningAlerta" style="margin-top: 10px; padding: 12px 14px; background: #fef2f2; border: 2px solid #ef4444; border-radius: 8px; color: #991b1b; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <strong style="font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                        <span id="iconoWarningAlerta">🛑</span> <span id="tituloWarningAlerta">ALERTA DE SEGURIDAD / WARNING TÉCNICO</span>
+                    </strong>
+                    <span id="badgeTipoWarning" class="badge" style="background: #dc2626; color: white; font-size: 10.5px; font-weight: 700;">INCOMPATIBILIDAD</span>
+                </div>
+                <div id="textoWarningAlerta" style="font-size: 12px; line-height: 1.45;"></div>
+            </div>
+
+            <!-- VISUALIZADOR DE UOM Y CANTIDAD EXTRAÍDA -->
+            <div style="margin-top: 12px; padding: 10px 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <span id="uomBadge" class="badge" style="background: #0284c7; color: white; font-size: 12px; padding: 4px 9px;">
+                        UOM ERP: PENDIENTE
+                    </span>
+                    <span id="cantidadBadge" class="badge" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 12px; padding: 4px 9px; display: none;">
+                    </span>
+                </div>
+                <div id="reglaEmpaqueBox" style="font-size: 11.5px; color: #475569; margin-top: 6px; font-style: italic;"></div>
+            </div>
+
+            <!-- WORKFLOW / PIPELINE EJECUTADO (6 ETAPAS CON ÁRBOL EXPLICABLE) -->
+            <div id="workflowBox" style="margin-top: 14px; padding: 12px; background: #f8fafc; border: 2px solid #38bdf8; border-radius: 8px; font-size: 11.5px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 15px;">🔄</span> PIPELINE Y ÁRBOL DE DECISIONES
+                    </span>
+                    <span id="wfEstadoGeneral" class="badge" style="background: #0284c7; color: white; font-size: 10.5px; padding: 3px 8px; font-weight: 700;">
+                        TRAZABILIDAD EN VIVO
+                    </span>
+                </div>
+
+                <!-- Resumen Compacto de Etapas (Siempre visible) -->
+                <div id="wfCompactSummary" style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">1. Intención: ⏳</span>
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">2. Alcance: ⏳</span>
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">3. Catálogo: ⏳</span>
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">4. UOM: ⏳</span>
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">5. Seguridad: ⏳</span>
+                    <span class="badge" style="background: #e2e8f0; color: #475569;">6. Oracle: ⏳</span>
+                </div>
+
+                <!-- Botón Interactivo para Mostrar/Ocultar Árbol de Decisiones (INICIA COLAPSADO) -->
+                <button id="btnToggleArbol" type="button" onclick="toggleModoExplicativo()" style="width: 100%; padding: 9px 12px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; font-weight: 700; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 12px; transition: background 0.2s;">
+                    <span id="btnToggleIcon">👁️</span>
+                    <span id="btnToggleText">Explicar Decisiones a la Audiencia (Árbol en Vivo)</span>
+                </button>
+
+                <!-- Contenedor Desplegable: Árbol de Decisiones Explicable (COLAPSADO POR DEFECTO) -->
+                <div id="arbolDecisionesContent" style="display: none; flex-direction: column; gap: 8px; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                    <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">
+                        <strong>Guía para el expositor:</strong> Este desglose muestra la compuerta lógica evaluada, la justificación y la regla determinista aplicada en cada etapa.
+                    </div>
+                    <div id="wfStepsList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
+            </div>
+
+            <div class="btn-row" style="margin-top: 12px;">
+                <button class="btn-primary" style="width: 100%; background: #0f766e;" onclick="copiarTexto('oracleOutput')">
+                    📋 Copiar Descripción Corta ERP
+                </button>
+            </div>
+
+            <!-- TELEMETRÍA DE TOKENS, COSTO Y VIABILIDAD EN EL MISMO APARTADO -->
+            <div id="telemetriaBox" style="margin-top: 12px; padding: 12px 14px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #f8fafc; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 11.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px; letter-spacing: 0.3px;">
+                        <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+                        CONSUMO Y COSTO (ESTA CONSULTA)
+                    </span>
+                    <span id="telModelo" style="font-size: 11px; font-family: monospace; background: #1e293b; padding: 2px 7px; border-radius: 4px; color: #94a3b8; border: 1px solid #334155;">
+                        -
+                    </span>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: baseline; background: #1e293b; padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #334155;">
+                    <div>
+                        <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Gasto Consulta</div>
+                        <div id="telCostoConsulta" style="font-size: 18px; font-weight: 800; color: #34d399; font-family: monospace;">$0.000000 USD</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600;">Latencia</div>
+                        <div id="telLatencia" style="font-size: 14px; font-weight: 700; color: #f1f5f9; font-family: monospace;">0.00 s</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px; text-align: center;">
+                    <div style="background: #1e293b; padding: 5px 4px; border-radius: 4px; border: 1px solid #334155;">
+                        <span style="color: #94a3b8; display: block; font-size: 9.5px;">Entrada</span>
+                        <strong id="telTokensIn" style="color: #60a5fa; font-family: monospace;">0</strong> <span style="font-size: 9px; color: #64748b;">tok</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 5px 4px; border-radius: 4px; border: 1px solid #334155;">
+                        <span style="color: #94a3b8; display: block; font-size: 9.5px;">Salida</span>
+                        <strong id="telTokensOut" style="color: #a78bfa; font-family: monospace;">0</strong> <span style="font-size: 9px; color: #64748b;">tok</span>
+                    </div>
+                    <div style="background: #1e293b; padding: 5px 4px; border-radius: 4px; border: 1px solid #334155;">
+                        <span style="color: #94a3b8; display: block; font-size: 9.5px;">Total</span>
+                        <strong id="telTokensTotal" style="color: #f8fafc; font-family: monospace;">0</strong> <span style="font-size: 9px; color: #64748b;">tok</span>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed #334155; padding-top: 6px; font-size: 11px; display: flex; justify-content: space-between; color: #cbd5e1;">
+                    <span>Acumulado sesión (<span id="telTotalConsultas">0</span> cols):</span>
+                    <strong id="telGastoAcumulado" style="color: #facc15; font-family: monospace;">$0.000000 USD</strong>
+                </div>
+                <div style="margin-top: 4px; font-size: 10.5px; color: #94a3b8; display: flex; justify-content: space-between;">
+                    <span>Viabilidad (x 1,000 reqs):</span>
+                    <strong id="telProyeccion1k" style="color: #38bdf8; font-family: monospace;">~$0.00 USD</strong>
+                </div>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 16px 0;">
+
+            <h4 style="margin: 0 0 6px 0; font-size: 13.5px;">Ficha Ampliada / Notas de Respaldo</h4>
+            <textarea id="fichaAmpliada" readonly style="width: 100%; height: 110px; padding: 10px; font-size: 12px; border-radius: 6px; border: 1px solid #cbd5e1; background: #f8fafc; resize: vertical;" placeholder="Aquí se detallarán los parámetros confirmados, las deducciones por uso y las advertencias de medición en campo..."></textarea>
+            <button class="btn-secondary" style="width: 100%; margin-top: 6px;" onclick="copiarTextoInput('fichaAmpliada')">
+                📋 Copiar Ficha Ampliada
+            </button>
+
+            <div id="zonaTrazabilidad" style="margin-top: 14px;"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Estado global de la sesión
+    let estadoSesion = {
+        texto_base: "",
+        interacciones: [],
+        seleccionesPendientesUI: {},
+        cola_combos: [],
+        lineas_completadas: [],
+        tokens_entrada_acumulados: 0,
+        tokens_salida_acumulados: 0,
+        gasto_total_acumulado_usd: 0,
+        total_consultas: 0
+    };
+
+    let dataUltimaRespuesta = null;
+
+    function cargarDemo(texto) {
+        document.getElementById('textoBase').value = texto;
+        iniciarAnalisis();
+    }
+
+    function reiniciarTodo() {
+        document.getElementById('textoBase').value = "";
+        estadoSesion = {
+            texto_base: "",
+            interacciones: [],
+            seleccionesPendientesUI: {},
+            cola_combos: [],
+            lineas_completadas: [],
+            tokens_entrada_acumulados: 0,
+            tokens_salida_acumulados: 0,
+            gasto_total_acumulado_usd: 0,
+            total_consultas: 0
+        };
+        dataUltimaRespuesta = null;
+        document.getElementById('zonaInteractiva').innerHTML = "";
+        document.getElementById('oracleOutput').innerText = "LA DESCRIPCIÓN TÉCNICA NORMALIZADA APARECERÁ AQUÍ...";
+        document.getElementById('fichaAmpliada').value = "";
+        document.getElementById('zonaTrazabilidad').innerHTML = "";
+        document.getElementById('charCount').innerText = "0 / 240 caracteres";
+        document.getElementById('estadoBadge').innerText = "ESPERANDO ENTRADA";
+        document.getElementById('estadoBadge').style.background = "#e2e8f0";
+        document.getElementById('estadoBadge').style.color = "#475569";
+        document.getElementById('uomBadge').innerText = "UOM ERP: PENDIENTE";
+        document.getElementById('cantidadBadge').style.display = "none";
+        document.getElementById('reglaEmpaqueBox').innerText = "";
+        document.getElementById('telemetriaBox').style.display = "none";
+        const warnPanel = document.getElementById('panelWarningAlerta');
+        if (warnPanel) warnPanel.style.display = "none";
+        const wfBox = document.getElementById('workflowBox');
+        if (wfBox) wfBox.style.display = "block";
+        const wfCompact = document.getElementById('wfCompactSummary');
+        if (wfCompact) {
+            wfCompact.innerHTML = `
+                <span class="badge" style="background: #e2e8f0; color: #475569;">1. Intención: ⏳</span>
+                <span class="badge" style="background: #e2e8f0; color: #475569;">2. Alcance: ⏳</span>
+                <span class="badge" style="background: #e2e8f0; color: #475569;">3. Catálogo: ⏳</span>
+                <span class="badge" style="background: #e2e8f0; color: #475569;">4. UOM: ⏳</span>
+                <span class="badge" style="background: #e2e8f0; color: #475569;">5. Seguridad: ⏳</span>
+                <span class="badge" style="background: #e2e8f0; color: #475569;">6. Oracle: ⏳</span>
+            `;
+        }
+        const stepsContainer = document.getElementById('wfStepsList');
+        if (stepsContainer) stepsContainer.innerHTML = "";
+        const arbolContent = document.getElementById('arbolDecisionesContent');
+        if (arbolContent) arbolContent.style.display = "none";
+        const btnText = document.getElementById('btnToggleText');
+        if (btnText) btnText.innerText = "Explicar Decisiones a la Audiencia (Árbol en Vivo)";
+        const btnIcon = document.getElementById('btnToggleIcon');
+        if (btnIcon) btnIcon.innerText = "👁️";
+        actualizarBandejaCola();
+    }
+
+    async function iniciarAnalisis() {
+        const texto = document.getElementById('textoBase').value.trim();
+        if (!texto) {
+            alert("Ingresa una necesidad inicial para analizar.");
+            return;
+        }
+        estadoSesion.texto_base = texto;
+        estadoSesion.interacciones = [];
+        estadoSesion.seleccionesPendientesUI = {};
+        await llamarBackend();
+    }
+
+    async function llamarBackend() {
+        const btn = document.getElementById('btnAnalizar');
+        const loader = document.getElementById('loadingStatus');
+        btn.disabled = true;
+        loader.style.display = "inline";
+
+        const wfEst = document.getElementById('wfEstadoGeneral');
+        if (wfEst) wfEst.innerText = "EVALUANDO 6 ETAPAS...";
+        const wfCompact = document.getElementById('wfCompactSummary');
+        if (wfCompact) {
+            wfCompact.innerHTML = `
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">1. Intención: ⚙️</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">2. Alcance: ⚙️</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">3. Catálogo: ⚙️</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">4. UOM: ⚙️</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">5. Seguridad: ⚙️</span>
+                <span class="badge" style="background: #e0f2fe; color: #0369a1;">6. Oracle: ⚙️</span>
+            `;
+        }
+
+        try {
+            const response = await fetch('/api/analizar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    texto_base: estadoSesion.texto_base,
+                    interacciones: estadoSesion.interacciones
+                })
+            });
+            const data = await response.json();
+            if (!response.ok || data.error) {
+                alert(data.error || "Error al consultar el servidor.");
+                return;
+            }
+            dataUltimaRespuesta = data;
+            renderizarRespuesta(data);
+        } catch (err) {
+            alert("Error de conexión con el servidor Flask: " + err.message);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = "none";
+        }
+    }
+
+    function renderizarRespuesta(data) {
+        // 1. Actualizar Panel Derecho (Oracle Fusion Cloud Output)
+        const descCorta = data.salida_erp?.descripcion_corta_oracle || "PENDIENTE DE DEFINICIÓN";
+        document.getElementById('oracleOutput').innerText = descCorta;
+        document.getElementById('fichaAmpliada').value = data.salida_erp?.ficha_ampliada_texto || "";
+
+        const len = descCorta.length;
+        const charEl = document.getElementById('charCount');
+        charEl.innerText = `${len} / 240 caracteres (Meta ideal: máx 120)`;
+        charEl.style.color = len > 240 ? "#dc2626" : (len > 120 ? "#d97706" : "#16a34a");
+
+        const badge = document.getElementById('estadoBadge');
+        const estado = data.salida_erp?.estado || "PENDIENTE";
+        badge.innerText = `${estado} | RIESGO REPROCESO: ${data.salida_erp?.riesgo_reproceso || 'MEDIO'}`;
+        if (estado === "LISTO_PARA_COPIAR" || estado === "CODIGO_EXISTENTE_EN_CATALOGO") {
+            badge.style.background = "#dcfce7"; badge.style.color = "#166534";
+        } else if (estado === "BLOQUEADO_POR_INCOMPATIBILIDAD" || estado === "REQUIERE_SEPARAR_LINEAS") {
+            badge.style.background = "#fee2e2"; badge.style.color = "#991b1b";
+        } else {
+            badge.style.background = "#fef3c7"; badge.style.color = "#92400e";
+        }
+
+        // 1.1. Control del Panel de Warning / Alerta Técnica Destacado
+        const warnPanel = document.getElementById('panelWarningAlerta');
+        const warnText = document.getElementById('textoWarningAlerta');
+        const warnBadge = document.getElementById('badgeTipoWarning');
+        const warnIcon = document.getElementById('iconoWarningAlerta');
+        const warnTitle = document.getElementById('tituloWarningAlerta');
+
+        const viabMercado = data.validacion_mercado?.viabilidad_comercial;
+        const esInsufIntencion = data.filtro_intencion?.intencion_insuficiente;
+
+        if (viabMercado && viabMercado !== "VALIDO") {
+            warnPanel.style.display = "block";
+            warnPanel.style.background = "#fef2f2";
+            warnPanel.style.borderColor = "#ef4444";
+            warnPanel.style.color = "#991b1b";
+            warnBadge.style.background = "#dc2626";
+            warnBadge.style.color = "white";
+            warnBadge.innerText = viabMercado;
+            if (warnIcon) warnIcon.innerText = "🛑";
+            if (warnTitle) warnTitle.innerText = "ALERTA DE SEGURIDAD / ANTI-FRANKENSTEIN";
+            let alertHtml = `<strong>Incompatibilidad física o comercial detectada:</strong><br>${escaparHtml(data.validacion_mercado?.mensaje_alerta || "Incompatibilidad técnico-comercial detectada.")}`;
+            if (data.validacion_mercado?.sugerencias_correccion?.length) {
+                alertHtml += `<div style="margin-top:8px; font-weight:700; color:#7f1d1d;">Alternativas estándar recomendadas (1 clic para corregir):</div><div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">`;
+                data.validacion_mercado.sugerencias_correccion.forEach(sug => {
+                    alertHtml += `<button type="button" style="background:#fee2e2; border:1px solid #ef4444; color:#991b1b; border-radius:5px; padding:3px 9px; font-size:11px; cursor:pointer; font-weight:700;" onclick="aplicarCorreccion('${escaparAttr(sug)}')">✅ Usar: ${escaparHtml(sug)}</button>`;
+                });
+                alertHtml += `</div>`;
+            }
+            warnText.innerHTML = alertHtml;
+        } else if (esInsufIntencion) {
+            warnPanel.style.display = "block";
+            warnPanel.style.background = "#fffbeb";
+            warnPanel.style.borderColor = "#f59e0b";
+            warnPanel.style.color = "#92400e";
+            warnBadge.style.background = "#d97706";
+            warnBadge.style.color = "white";
+            warnBadge.innerText = "INTENCIÓN INSUFICIENTE";
+            if (warnIcon) warnIcon.innerText = "⚠️";
+            if (warnTitle) warnTitle.innerText = "ALERTA: SOLICITUD SIN ESPECIFICACIÓN TÉCNICA";
+            warnText.innerHTML = `<strong>Ruido Administrativo / Falta de Especificación:</strong><br>${escaparHtml(data.filtro_intencion?.mensaje_aclaracion || "El texto ingresado carece de elementos técnicos para generar una descripción válida en Oracle Fusion Cloud.")}`;
+        } else if (data.salida_erp?.riesgo_reproceso === "ALTO") {
+            warnPanel.style.display = "block";
+            warnPanel.style.background = "#fffbeb";
+            warnPanel.style.borderColor = "#f59e0b";
+            warnPanel.style.color = "#92400e";
+            warnBadge.style.background = "#b45309";
+            warnBadge.style.color = "white";
+            warnBadge.innerText = "RIESGO REPROCESO ALTO";
+            if (warnIcon) warnIcon.innerText = "⚠️";
+            if (warnTitle) warnTitle.innerText = "ADVERTENCIA DE PARÁMETROS CRÍTICOS";
+            warnText.innerHTML = `La solicitud tiene alta probabilidad de ser rechazada por compras o almacén si no se definen los parámetros pendientes.`;
+        } else {
+            warnPanel.style.display = "none";
+        }
+
+        // 2. Control UOM y Cantidad Extraída
+        const uomSugerida = data.control_uom?.uom_sugerida || "UND";
+        document.getElementById('uomBadge').innerText = `UOM ERP: ${uomSugerida}`;
+        const cantExtraida = data.control_uom?.cantidad_pedido_extraida;
+        const cantBadge = document.getElementById('cantidadBadge');
+        if (cantExtraida && cantExtraida.trim()) {
+            cantBadge.style.display = "inline-block";
+            cantBadge.innerText = `Cantidad separada del texto: ${cantExtraida} ${uomSugerida}`;
+        } else {
+            cantBadge.style.display = "none";
+        }
+        document.getElementById('reglaEmpaqueBox').innerText = data.control_uom?.regla_empaque_aplicada || "";
+
+        // 3. Notas de Trazabilidad
+        let trazaHtml = "";
+        if (data.salida_erp?.notas_trazabilidad?.length) {
+            trazaHtml += `<div style="font-size:12px; color:#475569;"><strong>Auditoría de la descripción:</strong><ul style="margin:5px 0 0 0; padding-left:18px;">`;
+            data.salida_erp.notas_trazabilidad.forEach(n => {
+                trazaHtml += `<li>${escaparHtml(n)}</li>`;
+            });
+            trazaHtml += `</ul></div>`;
+        }
+        document.getElementById('zonaTrazabilidad').innerHTML = trazaHtml;
+
+        // 3.1. Telemetría de Tokens, Costo y Proyección de Viabilidad
+        if (data.telemetria) {
+            const tel = data.telemetria;
+            estadoSesion.total_consultas = (estadoSesion.total_consultas || 0) + 1;
+            estadoSesion.tokens_entrada_acumulados = (estadoSesion.tokens_entrada_acumulados || 0) + (tel.tokens_entrada || 0);
+            estadoSesion.tokens_salida_acumulados = (estadoSesion.tokens_salida_acumulados || 0) + (tel.tokens_salida || 0);
+            estadoSesion.gasto_total_acumulado_usd = (estadoSesion.gasto_total_acumulado_usd || 0) + (tel.costo_consulta_usd || 0);
+
+            const telBox = document.getElementById('telemetriaBox');
+            if (telBox) {
+                telBox.style.display = "block";
+                document.getElementById('telModelo').innerText = tel.modelo || "gemini";
+                document.getElementById('telCostoConsulta').innerText = `$${(tel.costo_consulta_usd || 0).toFixed(6)} USD`;
+                document.getElementById('telLatencia').innerText = `${tel.latencia_segundos || 0} s`;
+                document.getElementById('telTokensIn').innerText = (tel.tokens_entrada || 0).toLocaleString();
+                document.getElementById('telTokensOut').innerText = (tel.tokens_salida || 0).toLocaleString();
+                document.getElementById('telTokensTotal').innerText = (tel.tokens_totales || 0).toLocaleString();
+                document.getElementById('telTotalConsultas').innerText = estadoSesion.total_consultas;
+                document.getElementById('telGastoAcumulado').innerText = `$${estadoSesion.gasto_total_acumulado_usd.toFixed(6)} USD`;
+                document.getElementById('telProyeccion1k').innerText = `~$${(tel.proyeccion_1000_consultas_usd || 0).toFixed(3)} USD`;
+            }
+        }
+
+        // 3.2. Renderizar Pipeline del Workflow en Pantalla
+        renderizarWorkflow(data);
+
+        // 4. Actualizar Bandeja de Cola
+        actualizarBandejaCola();
+
+        // 5. Construir Zona Interactiva Izquierda
+        let html = "";
+
+        // MÓDULO A: Filtro de Intención Insuficiente
+        if (data.filtro_intencion?.intencion_insuficiente) {
+            html += `
+            <div class="banner banner-warn" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+                <strong>⚠️ Solicitud con Intención Insuficiente:</strong><br>
+                ${escaparHtml(data.filtro_intencion.mensaje_aclaracion || "Por favor especifica qué artículo o servicio necesitas solicitar.")}
+            </div>`;
+            document.getElementById('zonaInteractiva').innerHTML = html;
+            return;
+        }
+
+        // MÓDULO B: Atajo en 1 Clic (CANDIDATO_EN_CATALOGO)
+        if (data.cruce_catalogo_csv?.estado_cruce === "CANDIDATO_EN_CATALOGO" && data.cruce_catalogo_csv.candidatos_atajo?.length) {
+            html += `
+            <div class="card" style="border: 2px solid #10b981; background: #ecfdf5; margin-bottom: 16px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+                    <strong style="color: #065f46; font-size: 15px;">🎯 Coincidencia Directa en Catálogo (Atajo en 1 Clic)</strong>
+                    <span class="badge" style="background: #10b981; color: white;">CANDIDATO IDENTIFICADO</span>
+                </div>
+                <div style="font-size: 13px; color: #047857; margin-bottom: 12px;">
+                    ${escaparHtml(data.cruce_catalogo_csv.mensaje_catalogo)}
+                </div>`;
+
+            data.cruce_catalogo_csv.candidatos_atajo.forEach(c => {
+                const deltaStr = (c.delta_no_confirmado || []).join(", ");
+                const confStr = (c.atributos_confirmados_usuario || []).join(", ");
+                html += `
+                <div style="background: white; border: 1px solid #a7f3d0; border-radius: 8px; padding: 14px; margin-bottom: 10px;">
+                    <div style="display:flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 6px;">
+                        <span style="background: #047857; color: white; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${escaparHtml(c.codigo_erp)}</span>
+                        <span style="background: #d1fae5; color: #065f46; font-weight: 700; padding: 2px 8px; border-radius: 4px; font-size: 12px;">UOM: ${escaparHtml(c.uom)}</span>
+                        <strong style="font-size: 13.5px; color: #0f172a;">${escaparHtml(c.descripcion_corta_oracle)}</strong>
+                    </div>
+
+                    <div style="font-size: 12.5px; margin: 8px 0;">
+                        <div style="margin-bottom: 4px;">
+                            <span style="color: #166534; font-weight: 600;">✓ Coincide con lo que indicaste:</span>
+                            ${(c.atributos_confirmados_usuario || []).map(a => `<span class="resolved-pill origin-CONFIRMADO" style="padding: 1px 6px; font-size: 11px;">${escaparHtml(a)}</span>`).join(' ')}
+                        </div>
+                        <div>
+                            <span style="color: #854d0e; font-weight: 600;">⚠️ Atributos adicionales en este código (Delta):</span>
+                            ${(c.delta_no_confirmado || []).map(d => `<span class="delta-tag">${escaparHtml(d)}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap: 8px; flex-wrap: wrap; margin-top: 10px;">
+                        <button class="btn-primary" style="background: #059669; font-size: 12.5px; padding: 8px 12px;"
+                                onclick="aceptarAtajoCatalogo('${escaparAttr(c.codigo_erp)}', '${escaparAttr(c.descripcion_corta_oracle)}', '${escaparAttr(c.uom)}')">
+                            ✅ Sí, me sirve con ${escaparHtml(deltaStr)} -> Usar código ${escaparHtml(c.codigo_erp)} (UOM: ${escaparHtml(c.uom)})
+                        </button>
+                        <button class="btn-secondary" style="font-size: 12px; padding: 8px 12px; border-color: #cbd5e1;"
+                                onclick="rechazarAtajoCatalogo('${escaparAttr(confStr)}', '${escaparAttr(deltaStr)}')">
+                            ⚙️ No, necesito otra especificación distinta a ${escaparHtml(deltaStr)} (Mantener ${escaparHtml(confStr)} y personalizar)
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            html += `</div>`;
+        }
+
+        // MÓDULO C: Decisión de Marca / Repuesto OEM (Estándar ISO 8000 / NCS)
+        if (data.control_marca_oem?.requiere_decision_usuario) {
+            html += `
+            <div class="banner banner-warn" style="border-left: 4px solid #f59e0b; background: #fffbeb;">
+                <strong>🏷️ Decisión de Marca / Repuesto OEM (Estándar ISO 8000 / NCS):</strong><br>
+                Se detectó la marca/fabricante <strong>${escaparHtml(data.control_marca_oem.marca_detectada)}</strong> para una pieza de maquinaria.<br>
+                <small style="color: var(--muted);">${escaparHtml(data.control_marca_oem.mensaje_iso)}</small>
+                <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                    <button class="btn-secondary" style="background: white; border-color: #d97706; color: #b45309; font-weight: 600;" onclick="decidirModalidadMarca('REFERENCIA_ABIERTA', '${escaparAttr(data.control_marca_oem.marca_detectada)}')">
+                        🔓 Acepta equivalente técnico compatible (Poner como REF: MARCA y definir medidas)
+                    </button>
+                    <button class="btn-primary" style="background: #b45309; font-size: 13px;" onclick="decidirModalidadMarca('EXCLUSIVO_OEM', '${escaparAttr(data.control_marca_oem.marca_detectada)}')">
+                        🔒 Es Repuesto Exclusivo OEM (Exonerar medidas finas y exigir N/P + Atributo Macro Visible)
+                    </button>
+                </div>
+            </div>`;
+        }
+
+        // MÓDULO D: Detector de Combo (Múltiples Líneas ERP)
+        if (data.control_alcance?.es_multiple) {
+            html += `
+            <div class="banner banner-info">
+                <strong>⚠️ Detector de Combo (Múltiples Líneas ERP):</strong><br>
+                ${escaparHtml(data.control_alcance.mensaje_separacion)}<br>
+                <small>Haz clic en la línea que deseas estructurar primero (el resto irá a tu bandeja de cola):</small>
+                <div class="chip-group" style="margin-top:10px;">
+                    ${data.control_alcance.lineas_detectadas.map(linea =>
+                        `<span class="chip" style="background:#fff; font-weight:600;" onclick="seleccionarLineaCombo('${escaparAttr(linea)}')">👉 ${escaparHtml(linea)}</span>`
+                    ).join('')}
+                </div>
+            </div>`;
+        }
+
+        // MÓDULO E: Alerta Anti-Frankenstein (Incompatibilidad Comercial o Física)
+        if (data.validacion_mercado?.viabilidad_comercial && data.validacion_mercado.viabilidad_comercial !== "VALIDO") {
+            html += `
+            <div class="banner banner-danger">
+                <strong>🛑 Alerta Anti-Frankenstein (${escaparHtml(data.validacion_mercado.viabilidad_comercial)}):</strong><br>
+                ${escaparHtml(data.validacion_mercado.mensaje_alerta)}
+                <div style="margin-top:8px; font-weight:600;">Selecciona una alternativa comercialmente válida para corregir el pedido:</div>
+                <div class="chip-group">
+                    ${(data.validacion_mercado.sugerencias_correccion || []).map(sug =>
+                        `<span class="chip" style="background:#fff; border-color:#dc2626; color:#991b1b;" onclick="aplicarCorreccion('${escaparAttr(sug)}')">✅ Usar: ${escaparHtml(sug)}</span>`
+                    ).join('')}
+                </div>
+            </div>`;
+        }
+
+        // MÓDULO F: Aviso de Neutralización de Marca / Jerga
+        if (data.traduccion_jerga?.hubo_traduccion) {
+            html += `
+            <div class="banner banner-warn">
+                <strong>🔄 Normalización de Jerga / Marca Comercial:</strong>
+                Se detectó <em>"${escaparHtml(data.traduccion_jerga.termino_original)}"</em> y se estandarizó técnicamente como
+                <strong>${escaparHtml(data.traduccion_jerga.termino_normalizado)}</strong>.
+            </div>`;
+        }
+
+        // MÓDULO G: Patrón Sintáctico Deducido por Ingeniería Inversa del CSV
+        if (data.patron_historico?.se_uso_patron_csv) {
+            html += `
+            <div class="banner banner-info" style="background:#eff6ff; border-left:4px solid #2563eb; color:#1e3a8a;">
+                <strong>📐 Patrón Sintáctico Deducido por IA (${escaparHtml(data.patron_historico.codigo_referencia_usado || 'Histórico')}):</strong><br>
+                <span>${escaparHtml(data.patron_historico.estructura_adoptada)}</span>
+            </div>`;
+        }
+
+        // MÓDULO H: Parámetros Técnicos Resueltos
+        if (data.atributos_resueltos?.length) {
+            html += `
+            <div class="card">
+                <h4 style="margin:0 0 6px 0; font-size:14px;">Parámetros Técnicos Definidos</h4>
+                <div class="resolved-list">
+                    ${data.atributos_resueltos.map(ar => `
+                        <span class="resolved-pill origin-${escaparAttr(ar.origen_dato)}">
+                            ${escaparHtml(ar.nombre_parametro)}: ${escaparHtml(ar.valor_asignado)}
+                            <small style="opacity:0.8;">[${escaparHtml(ar.origen_dato)}]</small>
+                        </span>
+                    `).join('')}
+                </div>
+            </div>`;
+        }
+
+        // MÓDULO I: Tarjetas de Atributos Pendientes
+        if (data.atributos_pendientes?.length && !data.control_alcance?.es_multiple && data.cruce_catalogo_csv?.estado_cruce !== "DUPLICADO_EXACTO_DETECTADO") {
+            html += `
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div>
+                        <h3 style="margin:0; font-size:15.5px;">Especificaciones Faltantes (${data.atributos_pendientes.length})</h3>
+                        <p style="margin:2px 0 0 0; font-size:12.5px; color:var(--muted);">
+                            Elige el dato directo si lo conoces, o usa los botones de ayuda si no tienes la especificación.
+                        </p>
+                    </div>
+                </div>`;
+
+            data.atributos_pendientes.forEach(attr => {
+                html += `
+                <div class="attr-card" id="card_${escaparAttr(attr.id)}">
+                    <div class="attr-header">
+                        <span class="attr-title">${escaparHtml(attr.nombre_amigable)}</span>
+                        <span id="status_${escaparAttr(attr.id)}" style="font-size:12px; color:#1e40af; font-weight:600;"></span>
+                    </div>
+                    <div class="attr-why">💡 ${escaparHtml(attr.por_que_importa)}</div>
+
+                    <!-- VÍA 1: Selección rápida para quien conoce la especificación -->
+                    <div style="font-size:12px; font-weight:600; color:#334155;">Opción A — Conozco la especificación técnica:</div>
+                    <div class="chip-group">
+                        ${(attr.opciones_rapidas || []).map(op => `
+                            <span class="chip" onclick="registrarRespuesta('${escaparAttr(attr.id)}', '${escaparAttr(attr.nombre_amigable)}', 'CONFIRMADO', '${escaparAttr(op)}', this)">
+                                ${escaparHtml(op)}
+                            </span>
+                        `).join('')}
+                    </div>
+
+                    <div class="custom-input-row">
+                        <input type="text" id="custom_${escaparAttr(attr.id)}" placeholder="¿Otra medida o especificación exacta? Escríbela aquí...">
+                        <button onclick="registrarCustom('${escaparAttr(attr.id)}', '${escaparAttr(attr.nombre_amigable)}')">Fijar valor</button>
+                    </div>
+
+                    <!-- ENLACES DE RESCATE -->
+                    <div class="helper-links">
+                        <span class="helper-link" onclick="toggleBox('func_${escaparAttr(attr.id)}')">
+                            🛠️ No sé el dato técnico (Deducir por uso)
+                        </span>
+                        <span class="helper-link" style="color:#b45309;" onclick="toggleBox('field_${escaparAttr(attr.id)}')">
+                            🔦 ¿Dónde encuentro o mido este dato en campo?
+                        </span>
+                    </div>
+
+                    <!-- VÍA 2: Traductor Funcional por Uso -->
+                    <div id="func_${escaparAttr(attr.id)}" class="sub-box func-box">
+                        <strong>Traductor de Uso a Especificación:</strong><br>
+                        ${escaparHtml(attr.pregunta_funcional)}
+                        <div class="chip-group" style="margin-top:8px;">
+                            ${(attr.opciones_funcionales || []).map(opF => `
+                                <span class="chip" style="background:#fff;" onclick="registrarRespuesta('${escaparAttr(attr.id)}', '${escaparAttr(attr.nombre_amigable)}', 'DEDUCIDO_POR_USO', 'Uso declarado: ${escaparAttr(opF)}', this)">
+                                    ${escaparHtml(opF)}
+                                </span>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <!-- VÍA 3: Instrucción Física en Campo -->
+                    <div id="field_${escaparAttr(attr.id)}" class="sub-box field-box">
+                        <strong>Instrucción física para verificar sin inventar el dato:</strong><br>
+                        ${escaparHtml(attr.instruccion_fisica_campo)}
+                        <div style="margin-top:8px;">
+                            <span class="chip" style="background:#fff; border-color:#d97706; color:#92400e;"
+                                  onclick="registrarRespuesta('${escaparAttr(attr.id)}', '${escaparAttr(attr.nombre_amigable)}', 'POR_MEDIR_EN_CAMPO', 'Pendiente verificar en campo según instrucción física', this)">
+                                📌 Marcar como "Pendiente medir en campo" para no bloquear borrador
+                            </span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+
+            html += `
+                <button class="btn-primary" style="width:100%; padding:12px; font-size:14.5px;" onclick="aplicarSelecciones()">
+                    ✨ Integrar Respuestas Seleccionadas y Actualizar Descripción ERP
+                </button>
+            </div>`;
+        } else if (!data.control_alcance?.es_multiple && data.validacion_mercado?.viabilidad_comercial === "VALIDO" && data.salida_erp?.estado !== "BORRADOR_CON_PENDIENTES") {
+            html += `
+            <div class="banner banner-success">
+                <strong>✅ Especificación Completa y Verificada:</strong>
+                ${data.salida_erp?.estado === "CODIGO_EXISTENTE_EN_CATALOGO"
+                    ? "Código maestro del catálogo aplicado directamente. Listo para vincular en el pedido ERP."
+                    : "No faltan atributos críticos. La descripción corta cumple con el formato de Oracle Fusion Cloud y está lista para copiarse."}
+            </div>`;
+        }
+
+        document.getElementById('zonaInteractiva').innerHTML = html;
+    }
+
+    // GESTIÓN DE BANDEJA DE COLA PARA COMBOS
+    function actualizarBandejaCola() {
+        const container = document.getElementById('bandejaColaCombos');
+        const content = document.getElementById('queueContent');
+
+        const hayCola = estadoSesion.cola_combos && estadoSesion.cola_combos.length > 0;
+        const hayCompletadas = estadoSesion.lineas_completadas && estadoSesion.lineas_completadas.length > 0;
+
+        if (!hayCola && !hayCompletadas) {
+            container.style.display = "none";
+            return;
+        }
+
+        container.style.display = "block";
+        let qHtml = "";
+
+        // Líneas completadas
+        if (hayCompletadas) {
+            qHtml += `<div style="margin-bottom: 8px;"><strong style="font-size: 12px; color: #166534;">✅ Líneas catalogadas:</strong><ul style="margin: 4px 0; padding-left: 18px; font-size: 12.5px;">`;
+            estadoSesion.lineas_completadas.forEach((item, idx) => {
+                qHtml += `<li><strong>Línea ${idx + 1}:</strong> [UOM: ${escaparHtml(item.uom)}] <code>${escaparHtml(item.desc_oracle)}</code></li>`;
+            });
+            qHtml += `</ul></div>`;
+        }
+
+        // Líneas pendientes en cola
+        if (hayCola) {
+            qHtml += `<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">`;
+            qHtml += `<div style="font-size: 12.5px; color: #1e3a8a;"><strong>⏳ En cola para procesar (${estadoSesion.cola_combos.length}):</strong> "${escaparHtml(estadoSesion.cola_combos[0])}" ${estadoSesion.cola_combos.length > 1 ? `y ${estadoSesion.cola_combos.length - 1} más...` : ''}</div>`;
+            qHtml += `<button class="btn-primary" style="padding: 6px 12px; font-size: 12px; background: #2563eb;" onclick="pasarSiguienteLineaCola()">
+                ➡️ Guardar actual y pasar a siguiente línea
+            </button>`;
+            qHtml += `</div>`;
+        }
+
+        content.innerHTML = qHtml;
+    }
+
+    function seleccionarLineaCombo(lineaElegida) {
+        if (dataUltimaRespuesta?.control_alcance?.lineas_detectadas) {
+            const restantes = dataUltimaRespuesta.control_alcance.lineas_detectadas.filter(l => l !== lineaElegida);
+            estadoSesion.cola_combos = restantes;
+        }
+        document.getElementById('textoBase').value = lineaElegida;
+        estadoSesion.texto_base = lineaElegida;
+        estadoSesion.interacciones = [];
+        estadoSesion.seleccionesPendientesUI = {};
+        actualizarBandejaCola();
+        llamarBackend();
+    }
+
+    function pasarSiguienteLineaCola() {
+        if (!estadoSesion.cola_combos || estadoSesion.cola_combos.length === 0) return;
+
+        // Guardar la línea actual como completada
+        const descActual = document.getElementById('oracleOutput').innerText;
+        const uomActual = dataUltimaRespuesta?.control_uom?.uom_sugerida || "UND";
+
+        estadoSesion.lineas_completadas.push({
+            solicitud: estadoSesion.texto_base,
+            desc_oracle: descActual,
+            uom: uomActual
+        });
+
+        // Extraer siguiente línea de la cola
+        const siguiente = estadoSesion.cola_combos.shift();
+        document.getElementById('textoBase').value = siguiente;
+        estadoSesion.texto_base = siguiente;
+        estadoSesion.interacciones = [];
+        estadoSesion.seleccionesPendientesUI = {};
+
+        actualizarBandejaCola();
+        llamarBackend();
+    }
+
+    function copiarTodasLineasCompletadas() {
+        if (!estadoSesion.lineas_completadas.length) {
+            alert("Aún no has completado ninguna línea del combo.");
+            return;
+        }
+        let txt = "REQUERIMIENTO MULTILÍNEA ERP:\n";
+        estadoSesion.lineas_completadas.forEach((l, idx) => {
+            txt += `Línea ${idx + 1} [UOM: ${l.uom}]: ${l.desc_oracle}\n`;
+        });
+        navigator.clipboard.writeText(txt);
+        alert("Líneas copiadas al portapapeles:\n\n" + txt);
+    }
+
+    // ACCIONES DE ATAJO EN 1 CLIC
+    async function aceptarAtajoCatalogo(codigoErp, descOracle, uom) {
+        estadoSesion.interacciones.push({
+            tipo: "ATAJO_CATALOGO_ACEPTADO",
+            atributo: "Código Maestro Existente",
+            valor: `Usar código ${codigoErp}: ${descOracle} (UOM: ${uom})`
+        });
+        await llamarBackend();
+    }
+
+    async function rechazarAtajoCatalogo(confStr, deltaStr) {
+        estadoSesion.interacciones.push({
+            tipo: "ATAJO_CATALOGO_RECHAZADO",
+            atributo: "Conservar datos base y cambiar delta",
+            valor: `Mantener confirmados: ${confStr}. Preguntar solo por: ${deltaStr}`
+        });
+        await llamarBackend();
+    }
+
+    // ACCIÓN DE DECISIÓN DE MARCA ISO 8000
+    async function decidirModalidadMarca(modalidad, marca) {
+        estadoSesion.interacciones.push({
+            tipo: "DECISION_MARCA_OEM",
+            atributo: `Modalidad Marca ${marca}`,
+            valor: modalidad
+        });
+        await llamarBackend();
+    }
+
+    function toggleBox(boxId) {
+        const el = document.getElementById(boxId);
+        if (el) {
+            el.style.display = (el.style.display === "block") ? "none" : "block";
+        }
+    }
+
+    function registrarRespuesta(idAttr, nombreAttr, tipoOrigen, valor, chipElement) {
+        const card = document.getElementById(`card_${idAttr}`);
+        if (card) {
+            card.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+        }
+        if (chipElement) {
+            chipElement.classList.add('selected');
+        }
+
+        estadoSesion.seleccionesPendientesUI[idAttr] = {
+            tipo: tipoOrigen,
+            atributo: nombreAttr,
+            valor: valor
+        };
+
+        const statusEl = document.getElementById(`status_${idAttr}`);
+        if (statusEl) {
+            statusEl.innerText = `✓ Seleccionado: ${valor} (${tipoOrigen})`;
+        }
+    }
+
+    function registrarCustom(idAttr, nombreAttr) {
+        const inputEl = document.getElementById(`custom_${idAttr}`);
+        if (!inputEl || !inputEl.value.trim()) return;
+        registrarRespuesta(idAttr, nombreAttr, 'CONFIRMADO', inputEl.value.trim(), null);
+    }
+
+    async function aplicarSelecciones() {
+        const nuevas = Object.values(estadoSesion.seleccionesPendientesUI);
+        if (nuevas.length === 0) {
+            alert("Selecciona al menos una opción en las tarjetas antes de actualizar.");
+            return;
+        }
+        estadoSesion.interacciones.push(...nuevas);
+        estadoSesion.seleccionesPendientesUI = {};
+        await llamarBackend();
+    }
+
+    async function aplicarCorreccion(sugerencia) {
+        estadoSesion.interacciones.push({
+            tipo: "CORRECCION_COMERCIAL_ACEPTADA",
+            atributo: "Reemplazo por estándar válido",
+            valor: sugerencia
+        });
+        await llamarBackend();
+    }
+
+    function copiarTexto(elementId) {
+        const texto = document.getElementById(elementId).innerText;
+        navigator.clipboard.writeText(texto);
+        alert("Descripción copiada al portapapeles:\n\n" + texto);
+    }
+
+    function copiarTextoInput(elementId) {
+        const texto = document.getElementById(elementId).value;
+        navigator.clipboard.writeText(texto);
+        alert("Ficha ampliada copiada al portapapeles.");
+    }
+
+    function escaparHtml(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function escaparAttr(str) {
+        if (!str) return "";
+        return String(str)
+            .replace(/\\/g, "\\\\")
+            .replace(/'/g, "\\'")
+            .replace(/"/g, "&quot;");
+    }
+
+    function toggleModoExplicativo() {
+        const content = document.getElementById('arbolDecisionesContent');
+        const btnText = document.getElementById('btnToggleText');
+        const btnIcon = document.getElementById('btnToggleIcon');
+        if (!content) return;
+        const isHidden = content.style.display === "none" || content.style.display === "";
+        if (isHidden) {
+            content.style.display = "flex";
+            if (btnText) btnText.innerText = "Ocultar Árbol de Decisiones (Colapsar)";
+            if (btnIcon) btnIcon.innerText = "🔼";
+        } else {
+            content.style.display = "none";
+            if (btnText) btnText.innerText = "Explicar Decisiones a la Audiencia (Árbol en Vivo)";
+            if (btnIcon) btnIcon.innerText = "👁️";
+        }
+    }
+
+    function renderizarWorkflow(data) {
+        const wfBox = document.getElementById('workflowBox');
+        if (!wfBox) return;
+        wfBox.style.display = "block";
+
+        // 1. Resumen Compacto de 6 Etapas (Siempre visible)
+        const esInsuf = data.filtro_intencion?.intencion_insuficiente;
+        const esCombo = data.control_alcance?.es_multiple;
+        const estCruce = data.cruce_catalogo_csv?.estado_cruce || "NUEVO";
+        const uomVal = data.control_uom?.uom_sugerida || "UND";
+        const viab = data.validacion_mercado?.viabilidad_comercial || "VALIDO";
+        const estErp = data.salida_erp?.estado || "BORRADOR";
+
+        let cruceCompact = "NUEVO";
+        if (estCruce === "CANDIDATO_EN_CATALOGO") cruceCompact = "ATAJO 1-CLIC";
+        else if (estCruce === "MULTIPLES_VARIANTES") cruceCompact = "VARIANTES";
+        else if (estCruce === "DUPLICADO_EXACTO_DETECTADO") cruceCompact = "DUPLICADO";
+
+        const compactHtml = `
+            <span class="badge" style="background: ${esInsuf ? '#fee2e2' : '#dcfce7'}; color: ${esInsuf ? '#991b1b' : '#166534'};">1. Intención: ${esInsuf ? '🛑 Vaga' : '✓ Válida'}</span>
+            <span class="badge" style="background: ${esCombo ? '#fef3c7' : '#dcfce7'}; color: ${esCombo ? '#92400e' : '#166534'};">2. Alcance: ${esCombo ? '📋 Combo' : '✓ Monolínea'}</span>
+            <span class="badge" style="background: #e0f2fe; color: #0369a1;">3. Catálogo: ${cruceCompact}</span>
+            <span class="badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">4. UOM: ${uomVal}</span>
+            <span class="badge" style="background: ${viab === 'INCOMPATIBLE' ? '#fee2e2' : '#dcfce7'}; color: ${viab === 'INCOMPATIBLE' ? '#991b1b' : '#166534'};">5. Seguridad: ${viab === 'INCOMPATIBLE' ? '🛑 Bloqueo' : '✓ OK'}</span>
+            <span class="badge" style="background: ${(estErp === 'LISTO_PARA_COPIAR' || estErp === 'CODIGO_EXISTENTE_EN_CATALOGO') ? '#dcfce7' : '#fef3c7'}; color: ${(estErp === 'LISTO_PARA_COPIAR' || estErp === 'CODIGO_EXISTENTE_EN_CATALOGO') ? '#166534' : '#92400e'};">6. Oracle: ${estErp}</span>
+        `;
+        const compactContainer = document.getElementById('wfCompactSummary');
+        if (compactContainer) compactContainer.innerHTML = compactHtml;
+
+        // 2. Árbol de Decisiones Explicable (Desplegable)
+        let stepsHtml = "";
+
+        if (data.arbol_decisiones && Array.isArray(data.arbol_decisiones) && data.arbol_decisiones.length > 0) {
+            data.arbol_decisiones.forEach((paso, idx) => {
+                const v = (paso.veredicto || "").toUpperCase();
+                let vBg = "#e2e8f0", vColor = "#475569";
+                if (v.includes("BLOQUEO") || v.includes("INCOMPATIBLE") || v.includes("INSUFICIENTE")) {
+                    vBg = "#fee2e2"; vColor = "#991b1b";
+                } else if (v.includes("ATAJO") || v.includes("DUPLICADO") || v.includes("CATALOGO")) {
+                    vBg = "#ccfbf1"; vColor = "#0f766e";
+                } else if (v.includes("COMBO") || v.includes("BIFURCACION") || v.includes("VARIANTE") || v.includes("BORRADOR")) {
+                    vBg = "#fef3c7"; vColor = "#92400e";
+                } else if (v.includes("OEM") || v.includes("ISO")) {
+                    vBg = "#ede9fe"; vColor = "#5b21b6";
+                } else if (v.includes("APROBADO") || v.includes("CONFIRM") || v.includes("LISTO") || v.includes("COMPATIBLE") || v.includes("MONOLINEA") || v.includes("VALID")) {
+                    vBg = "#dcfce7"; vColor = "#166534";
+                }
+
+                stepsHtml += `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <strong style="color: #0f172a; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span>${paso.icono || '📌'}</span> ${escaparHtml(paso.etapa)}
+                        </strong>
+                        <span class="badge" style="background: ${vBg}; color: ${vColor}; font-size: 10px; font-weight: 700; padding: 2px 7px;">
+                            ${escaparHtml(paso.veredicto)}
+                        </span>
+                    </div>
+                    <div style="font-size: 11px; color: #475569; margin-bottom: 6px; line-height: 1.35;">
+                        <span style="color: #64748b; font-weight: 600;">❓ Pregunta clave:</span> 
+                        <span style="font-style: italic;">${escaparHtml(paso.pregunta_evaluada)}</span>
+                    </div>
+                    <div style="background: #f8fafc; border-left: 3px solid #0284c7; padding: 6px 9px; border-radius: 4px; font-size: 11.5px; color: #0f172a; margin-bottom: 6px; line-height: 1.4;">
+                        <strong style="color: #0369a1;">🎯 Cómo decidió el motor:</strong> ${escaparHtml(paso.explicacion_para_audiencia)}
+                    </div>
+                    <div style="font-size: 10.5px; color: #64748b; display: flex; justify-content: space-between; border-top: 1px dotted #e2e8f0; padding-top: 4px;">
+                        <span>⚖️ Regla aplicada: <em style="color: #334155;">${escaparHtml(paso.regla_aplicada)}</em></span>
+                    </div>
+                </div>`;
+            });
+        } else {
+            // Fallback sintético en caso de respuestas heredadas
+            const steps = [
+                {
+                    num: "1", icon: esInsuf ? "🛑" : "🧹", titulo: "1. Ingesta, Intención y Purga de Ruido",
+                    estado: esInsuf ? "INSUFICIENTE" : "APROBADO_CON_PURGA",
+                    estadoBg: esInsuf ? "#fee2e2" : "#dcfce7", estadoColor: esInsuf ? "#991b1b" : "#166534",
+                    pregunta: "¿La solicitud contiene intención técnica real o solo ruido operativo?",
+                    decision: esInsuf ? (data.filtro_intencion?.mensaje_aclaracion || "Texto vago sin bien o servicio.") : "Intención técnica identificada y ruido administrativo purgado de raíz.",
+                    regla: "Regla 0 (Intención) + Regla 7 (Purga Ruido)"
+                },
+                {
+                    num: "2", icon: esCombo ? "📋" : "✅", titulo: "2. Control de Alcance / Combos",
+                    estado: esCombo ? "COMBO_DETECTADO" : "MONOLINEA",
+                    estadoBg: esCombo ? "#fef3c7" : "#dcfce7", estadoColor: esCombo ? "#92400e" : "#166534",
+                    pregunta: "¿Es un requerimiento único o mezcla materiales y servicios?",
+                    decision: esCombo ? `Se separaron ${data.control_alcance?.lineas_detectadas?.length || 2} líneas en la bandeja de combo.` : "Solicitud de un único bien/servicio ERP.",
+                    regla: "Regla 4 (Detector de Combos)"
+                },
+                {
+                    num: "3", icon: "🔍", titulo: "3. Cruce con Catálogo Maestro Histórico",
+                    estado: cruceCompact,
+                    estadoBg: estCruce === "CANDIDATO_EN_CATALOGO" ? "#ccfbf1" : "#e0f2fe",
+                    estadoColor: estCruce === "CANDIDATO_EN_CATALOGO" ? "#0f766e" : "#0369a1",
+                    pregunta: "¿Existe en el catálogo histórico o requiere catalogación nueva?",
+                    decision: data.cruce_catalogo_csv?.mensaje_catalogo || "Búsqueda contra 18 referencias del catálogo maestro.",
+                    regla: "Regla 1 (Cruce CSV & Atajo 1-Clic)"
+                },
+                {
+                    num: "4", icon: "🏷️", titulo: "4. Desacople de UOM y Empaque",
+                    estado: `UOM: ${uomVal}`,
+                    estadoBg: "#f1f5f9", estadoColor: "#334155",
+                    pregunta: "¿Qué UOM ERP corresponde y hay cantidades que expulsar del texto?",
+                    decision: data.control_uom?.regla_empaque_aplicada || `UOM sugerida: ${uomVal}.`,
+                    regla: "Regla 2 (UOM y Expulsión de Cantidad)"
+                },
+                {
+                    num: "5", icon: "🛡️", titulo: "5. Seguridad Anti-Frankenstein e ISO 8000",
+                    estado: viab === "INCOMPATIBLE" ? "INCOMPATIBILIDAD" : "COMPATIBLE",
+                    estadoBg: viab === "INCOMPATIBLE" ? "#fee2e2" : "#dcfce7",
+                    estadoColor: viab === "INCOMPATIBLE" ? "#991b1b" : "#166534",
+                    pregunta: "¿La especificación es físicamente viable y respeta normas OEM?",
+                    decision: viab === "INCOMPATIBLE" ? (data.validacion_mercado?.mensaje_alerta || "Incoherencia física detectada.") : "Especificación comercialmente viable bajo norma.",
+                    regla: "Regla 3 (ISO 8000) + Regla 5 (Anti-Frankenstein)"
+                },
+                {
+                    num: "6", icon: "☁️", titulo: "6. Normalización Formato Oracle Fusion",
+                    estado: estErp,
+                    estadoBg: (estErp === "LISTO_PARA_COPIAR" || estErp === "CODIGO_EXISTENTE_EN_CATALOGO") ? "#dcfce7" : "#fef3c7",
+                    estadoColor: (estErp === "LISTO_PARA_COPIAR" || estErp === "CODIGO_EXISTENTE_EN_CATALOGO") ? "#166534" : "#92400e",
+                    pregunta: "¿Cumple con la sintaxis en MAYÚSCULAS y límite de caracteres?",
+                    decision: `Formato Oracle generado (${(data.salida_erp?.descripcion_corta_oracle || '').length} caracteres). Riesgo: ${data.salida_erp?.riesgo_reproceso || 'BAJO'}.`,
+                    regla: "Regla 6 (Ingeniería Inversa y Síntesis Oracle)"
+                }
+            ];
+
+            steps.forEach(s => {
+                stepsHtml += `
+                <div style="background: white; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <strong style="color: #0f172a; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                            <span>${s.icon}</span> ${s.titulo}
+                        </strong>
+                        <span class="badge" style="background: ${s.estadoBg}; color: ${s.estadoColor}; font-size: 10px; font-weight: 700; padding: 2px 7px;">
+                            ${s.estado}
+                        </span>
+                    </div>
+                    <div style="font-size: 11px; color: #475569; margin-bottom: 6px;">
+                        <span style="color: #64748b; font-weight: 600;">❓ Pregunta clave:</span> <em>${s.pregunta}</em>
+                    </div>
+                    <div style="background: #f8fafc; border-left: 3px solid #0284c7; padding: 6px 9px; border-radius: 4px; font-size: 11.5px; color: #0f172a; margin-bottom: 6px;">
+                        <strong style="color: #0369a1;">🎯 Decisión del motor:</strong> ${escaparHtml(s.decision)}
+                    </div>
+                    <div style="font-size: 10.5px; color: #64748b; border-top: 1px dotted #e2e8f0; padding-top: 4px;">
+                        <span>⚖️ Regla aplicada: <em>${s.regla}</em></span>
+                    </div>
+                </div>`;
+            });
+        }
+
+        const stepsContainer = document.getElementById('wfStepsList');
+        if (stepsContainer) stepsContainer.innerHTML = stepsHtml;
+
+        // 3. Manejo de Estado Desplegado / Colapsado
+        const arbolContent = document.getElementById('arbolDecisionesContent');
+        const btnText = document.getElementById('btnToggleText');
+        const btnIcon = document.getElementById('btnToggleIcon');
+        const hayWarningCritico = (viab && viab !== "VALIDO") || esInsuf;
+
+        if (hayWarningCritico) {
+            // Auto-expandir cuando hay warning crítico para que el usuario y la audiencia vean inmediatamente por qué se bloqueó
+            if (arbolContent) arbolContent.style.display = "flex";
+            if (btnText) btnText.innerText = `Ocultar Árbol de Decisiones (🛑 Alerta en Etapa ${viab !== 'VALIDO' ? '5: Anti-Frankenstein' : '1: Intención Vaga'})`;
+            if (btnIcon) btnIcon.innerText = "🔼";
+        } else {
+            // En casos normales, iniciar colapsado respetando la preferencia del usuario
+            if (arbolContent) arbolContent.style.display = "none";
+            if (btnText) btnText.innerText = "Explicar Decisiones a la Audiencia (Árbol en Vivo)";
+            if (btnIcon) btnIcon.innerText = "👁️";
+        }
+    }
+</script>
+
+</body>
+</html>
