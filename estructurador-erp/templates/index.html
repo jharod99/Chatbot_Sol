@@ -740,10 +740,10 @@
             warnPanel.style.color = "#991b1b";
             warnBadge.style.background = "#dc2626";
             warnBadge.style.color = "white";
-            warnBadge.innerText = viabMercado;
-            if (warnIcon) warnIcon.innerText = "🛑";
-            if (warnTitle) warnTitle.innerText = "ALERTA DE SEGURIDAD / ANTI-FRANKENSTEIN";
-            let alertHtml = `<strong>Incompatibilidad física o comercial detectada:</strong><br>${escaparHtml(data.validacion_mercado?.mensaje_alerta || "Incompatibilidad técnico-comercial detectada.")}`;
+            warnBadge.innerText = viabMercado === "MEDIDA_NO_ESTANDAR" ? "MEDIDA FUERA DE NORMA" : viabMercado;
+            if (warnIcon) warnIcon.innerText = viabMercado === "MEDIDA_NO_ESTANDAR" ? "📐" : "🛑";
+            if (warnTitle) warnTitle.innerText = viabMercado === "MEDIDA_NO_ESTANDAR" ? "ALERTA: MEDIDA INEXISTENTE EN LA INDUSTRIA (ANTI-FRANKENSTEIN)" : "ALERTA DE SEGURIDAD / ANTI-FRANKENSTEIN";
+            let alertHtml = `<strong>${viabMercado === 'MEDIDA_NO_ESTANDAR' ? 'Medida continua fuera de norma estándar:' : 'Incompatibilidad física o comercial detectada:'}</strong><br>${escaparHtml(data.validacion_mercado?.mensaje_alerta || "Incompatibilidad técnico-comercial detectada.")}`;
             if (data.validacion_mercado?.sugerencias_correccion?.length) {
                 alertHtml += `<div style="margin-top:8px; font-weight:700; color:#7f1d1d;">Alternativas estándar recomendadas (1 clic para corregir):</div><div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:5px;">`;
                 data.validacion_mercado.sugerencias_correccion.forEach(sug => {
@@ -1310,7 +1310,7 @@
             <span class="badge" style="background: ${esCombo ? '#fef3c7' : '#dcfce7'}; color: ${esCombo ? '#92400e' : '#166534'};">2. Alcance: ${esCombo ? '📋 Combo' : '✓ Monolínea'}</span>
             <span class="badge" style="background: #e0f2fe; color: #0369a1;">3. Catálogo: ${cruceCompact}</span>
             <span class="badge" style="background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1;">4. UOM: ${uomVal}</span>
-            <span class="badge" style="background: ${viab === 'INCOMPATIBLE' ? '#fee2e2' : '#dcfce7'}; color: ${viab === 'INCOMPATIBLE' ? '#991b1b' : '#166534'};">5. Seguridad: ${viab === 'INCOMPATIBLE' ? '🛑 Bloqueo' : '✓ OK'}</span>
+            <span class="badge" style="background: ${viab !== 'VALIDO' ? '#fee2e2' : '#dcfce7'}; color: ${viab !== 'VALIDO' ? '#991b1b' : '#166534'};">5. Seguridad: ${viab !== 'VALIDO' ? (viab === 'MEDIDA_NO_ESTANDAR' ? '📐 Fuera de Norma' : '🛑 Bloqueo') : '✓ OK'}</span>
             <span class="badge" style="background: ${(estErp === 'LISTO_PARA_COPIAR' || estErp === 'CODIGO_EXISTENTE_EN_CATALOGO') ? '#dcfce7' : '#fef3c7'}; color: ${(estErp === 'LISTO_PARA_COPIAR' || estErp === 'CODIGO_EXISTENTE_EN_CATALOGO') ? '#166534' : '#92400e'};">6. Oracle: ${estErp}</span>
         `;
         const compactContainer = document.getElementById('wfCompactSummary');

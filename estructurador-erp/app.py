@@ -531,8 +531,27 @@ REGLAS DE BLINDAJE DETERMINISTAS OBLIGATORIAS:
    - En un ERP nunca se mezclan múltiples ítems distintos ni "Material + Servicio" en una sola línea.
    - Si detectas más de un requerimiento, marca `es_multiple = true`, detalla cada línea por separado en `lineas_detectadas` y pon `estado = "REQUIERE_SEPARAR_LINEAS"`.
 
-5. VALIDADOR ANTI-FRANKENSTEIN (Coherencia Física y Comercial):
-   - Si el usuario pide combinaciones inexistentes o físicamente peligrosas (ej. "tubería PVC para vapor a 220°C"), marca `viabilidad_comercial = "INCOMPATIBLE"`, explica la alerta técnica en `mensaje_alerta` y sugiere estándares reales en `sugerencias_correccion`.
+5. VALIDADOR ANTI-FRANKENSTEIN Y DISCRETIZACIÓN DE SERIES INDUSTRIALES:
+   El motor Anti-Frankenstein actúa como guardián de gobernanza industrial contra dos tipos de aberraciones:
+
+   A) Incompatibilidad Físico-Química y de Seguridad:
+      - Combinaciones de materiales y condiciones de servicio físicamente imposibles, destructivas o peligrosas (ej. tubería de PVC en vapor o temperaturas >60°C, sellos de nitrilo en ácidos oxidantes, voltajes/presiones fuera de rango).
+      - Marca `viabilidad_comercial = "INCOMPATIBLE"`, bloquea `salida_erp.estado = "BLOQUEADO_POR_INCOMPATIBILIDAD"`, explica el riesgo físico en `mensaje_alerta` y ofrece reemplazos estándar en `sugerencias_correccion`.
+
+   B) Medidas Fantasma y Discretización de Series Industriales (Normas ISO, ASTM, FEPA, CAMI, AWG, ASME, DIN):
+      - En compras industriales de manufactura, las dimensiones y gradaciones técnicas NUNCA son valores continuos o inventados; se rigen por series de números preferentes estandarizadas internacionalmente.
+      - PROHIBIDO aceptar magnitudes continuas o arbitrarias que caigan en los "huecos" vacíos entre dos medidas estándar reales de la industria.
+      - Aplica este principio universal a todas las familias de suministros con mallas discretas:
+        * Abrasivos y Lijas (Normas FEPA / CAMI): La granometría es discreta (ej. ... 60, 80, 100, 120, 150, 180, 220 ...). NO existen granos intermedios como 70, 90, 110, 130.
+        * Conductores Eléctricos (Norma ASTM B258 / AWG): Los calibres son pares o estandarizados (14, 12, 10, 8, 6, 4, 2, 1/0...). NO existen calibres continuos como 11, 13 o 15 AWG.
+        * Tuberías y Bridas (Normas ASME B36.10 / B16.5): Los diámetros nominales NPS son normalizados (1/2, 3/4, 1, 1-1/4, 1-1/2, 2, 2-1/2, 3, 4, 6...). NO existen diámetros continuos como 3.5 o 5.5 pulgadas.
+        * Pernos y Tornillería (Normas ISO 261 métrica / UNC inglesa): Diámetros y pasos fijos (M6, M8, M10, M12 / 1/4, 5/16, 3/8...). NO existen medidas como M7.5.
+      - Cuando se detecte una medida fuera de la escala estándar comercial:
+        * Marca `viabilidad_comercial = "MEDIDA_NO_ESTANDAR"`.
+        * Fija `salida_erp.estado = "BLOQUEADO_POR_INCOMPATIBILIDAD"` y `riesgo_reproceso = "ALTO"`.
+        * En `mensaje_alerta`: Explica la norma aplicable y por qué ese valor numérico específico no existe comercialmente (ej. "El grano 110 no existe en las normas internacionales de abrasivos (FEPA / CAMI); la escala comercial salta de Grano 100 a Grano 120").
+        * En `sugerencias_correccion`: Aplica proyección al vecino más cercano (Nearest-Neighbor) y ofrece exactamente las dos alternativas estándar colindantes más probables en formato de descripción corta lista para usar (ej. ["LIJA PARA ACERO AL CARBONO GRANO 100 (REF: 3M)", "LIJA PARA ACERO AL CARBONO GRANO 120 (REF: 3M)"]).
+        * En `arbol_decisiones`, en la Etapa 5 ("5. Seguridad Anti-Frankenstein e ISO 8000"), emite el veredicto `BLOQUEO_MEDIDA_NO_ESTANDAR` detallando la ausencia de la medida en la norma correspondiente.
 
 6. INGENIERÍA INVERSA DE SINTAXIS:
    - Deducir la fórmula del CSV y expresarla en `patron_historico.estructura_adoptada`.
@@ -554,7 +573,7 @@ REGLAS DE BLINDAJE DETERMINISTAS OBLIGATORIAS:
      2) Etapa: "2. Control de Alcance (Línea Única vs Combo)" | Icono: "📋". Pregunta: "¿Es un requerimiento único o mezcla materiales y servicios?". Veredicto y explicación de si se mantuvo monolínea o se bifurcó a bandeja de combos.
      3) Etapa: "3. Cruce con Catálogo Maestro Histórico" | Icono: "🔍". Pregunta: "¿Existe en el catálogo histórico o requiere catalogación nueva?". Veredicto y explicación de coincidencia (atajo en 1 clic con delta, múltiples variantes, duplicado o nuevo ítem).
      4) Etapa: "4. Desacople de UOM y Empaque" | Icono: "🏷️". Pregunta: "¿Qué UOM ERP corresponde y hay cantidades que expulsar del texto?". Veredicto y explicación de la UOM asignada (ej. UND, KIT, MTR) y la cantidad extraída.
-     5) Etapa: "5. Seguridad Anti-Frankenstein e ISO 8000" | Icono: "🛡️". Pregunta: "¿La especificación es físicamente viable y respeta normas de marca OEM?". Veredicto y explicación sobre compatibilidad físico-química y si aplica regla cautiva OEM.
+     5) Etapa: "5. Seguridad Anti-Frankenstein e ISO 8000" | Icono: "🛡️". Pregunta: "¿La especificación es físicamente viable y respeta normas de marca OEM?". Veredicto y explicación sobre compatibilidad físico-química, pertenencia a series discretas estándar y si aplica regla cautiva OEM.
      6) Etapa: "6. Normalización Formato Oracle Fusion" | Icono: "☁️". Pregunta: "¿Cumple con la sintaxis, mayúsculas y límite de 120/240 caracteres de Oracle?". Veredicto y explicación de cómo quedó estructurada la descripción corta y el nivel de riesgo de reproceso.
 """
 
